@@ -1,20 +1,21 @@
 {
     "pluginName": "corruption",
-    "variableNames": [
-        "type",
-        "amount"
-    ],
     "sliders": [
         {
-            "max": 3,
-            "name": "corruptionType"
+            "max": 32,
+            "name": "Corruption"
         },
         {
-            "max": 32,
-            "name": "corruptionAmount"
+            "max": 3,
+            "name": "Corrupt #"
         }
     ],
     "delayLineSize": 0,
-    "instrumentStateFunction": " \n        this.pluginValues[0] = instrument.pluginValues[0];\n        this.pluginValues[1] = instrument.pluginValues[1];\n    ",
-    "synthFunction": "\n        const isCorr0 = Math.max(-1 * Math.abs(type - 0)+1, 0);\n        const isCorr1 = Math.max(-1 * Math.abs(type - 1)+1, 0);\n        const isCorr2 = Math.max(-1 * Math.abs(type - 2)+1, 0);\n        const isCorr3 = Math.max(-1 * Math.abs(type - 3)+1, 0);\n        const isCorr4 = Math.max(-1 * Math.abs(type - 4)+1, 0);\n        const isCorr5 = Math.max(-1 * Math.abs(type - 5)+1, 0);\n        const isCorr6 = Math.max(-1 * Math.abs(type - 6)+1, 0);\n        const isCorr7 = Math.max(-1 * Math.abs(type - 7)+1, 0);\n        const isCorr8 = Math.max(-1 * Math.abs(type - 8)+1, 0);\n        const isCorr9 = Math.max(-1 * Math.abs(type - 9)+1, 0);\n\n        const corr0helper0 = Math.max(-1 * Math.abs(amount - 0)+1,0);\n        const corr0helperInbetween = Math.min(Math.max(-1 * Math.abs(amount - 32/2)+32/2, 0), 1);\n        const corr0helperMax = Math.max(-1 * Math.abs(amount - 32)+1, 0);\n        const corr0helperFunction = 2 * Math.floor((amount * sampleIndex / 32)% 2)-1;\n\n        const corr0 = corr0helper0 + corr0helperMax * -1 + corr0helperInbetween * corr0helperFunction;\n        const corr1 = (2 / Math.PI) * Math.asin(Math.cos(amount * sampleIndex / 32));\n        const corr2 = (amount * sampleIndex / 32 - 1)%2 - 1;\n        const corr3 = Math.min(Math.max(Math.tan(amount * sampleIndex / 32 + 90),-1),1);\n        sample = isCorr0*corr0*sample + isCorr1*corr1*sample + isCorr2*corr2*sample + isCorr3*corr3*sample;\n    "
+    "instrumentStateFunction": " \n        this.pluginValues[0] = instrument.pluginValues[0];\n        this.pluginValues[1] = instrument.pluginValues[1];\n        this.pluginValues[2] = +this.pluginValues[2] + 0.01;\n        if(this.pluginValues[2] > 1024) this.pluginValues[2] = 0;\n    ",
+    "variableNames": [
+        "corruptionAmount",
+        "corruptionType",
+        "corruptionTime"
+    ],
+    "synthFunction": "\n        const isCorr0 = Math.max(-1 * Math.abs(corruptionType - 0)+1, 0);\n        const isCorr1 = Math.max(-1 * Math.abs(corruptionType - 1)+1, 0);\n        const isCorr2 = Math.max(-1 * Math.abs(corruptionType - 2)+1, 0);\n        const isCorr3 = Math.max(-1 * Math.abs(corruptionType - 3)+1, 0);\n        // const isCorr4 = Math.max(-1 * Math.abs(corruptionType - 4)+1, 0);\n        // const isCorr5 = Math.max(-1 * Math.abs(corruptionType - 5)+1, 0);\n        // const isCorr6 = Math.max(-1 * Math.abs(corruptionType - 6)+1, 0);\n        // const isCorr7 = Math.max(-1 * Math.abs(corruptionType - 7)+1, 0);\n        // const isCorr8 = Math.max(-1 * Math.abs(corruptionType - 8)+1, 0);\n        // const isCorr9 = Math.max(-1 * Math.abs(corruptionType - 9)+1, 0);\n\n        const corr0helper0 = Math.max(-1 * Math.abs(corruptionAmount - 0)+1,0);\n        const corr0helperInbetween = Math.min(Math.max(-1 * Math.abs(corruptionAmount - 32/2)+32/2, 0), 1);\n        const corr0helperMax = Math.max(-1 * Math.abs(corruptionAmount - 32)+1, 0);\n        const corr0helperFunction = 2 * Math.floor((corruptionAmount * corruptionTime / 32)% 2)-1;\n\n        const corr0 = corr0helper0 + corr0helperMax * -1 + corr0helperInbetween * corr0helperFunction;\n        const corr1 = (2 / Math.PI) * Math.asin(Math.cos(corruptionAmount * corruptionTime / 32));\n        const corr2 = (corruptionAmount * corruptionTime / 32 - 1)%2 - 1;\n        const corr3 = Math.min(Math.max(Math.tan(corruptionAmount * corruptionTime / 32 + 90),-1),1);\n        sample = isCorr0*corr0*sample + isCorr1*corr1*sample + isCorr2*corr2*sample + isCorr3*corr3*sample;\n    "
 }

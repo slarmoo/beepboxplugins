@@ -1,0 +1,19 @@
+{
+  "name": "beepboxplugins",
+  "version": "1.0.0",
+  "description": "A collection of plugin jsons for importing into supported mods",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "vite": "^5.4.19"
+  }
+}

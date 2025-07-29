@@ -20,10 +20,10 @@ const effectPlugin: EffectPlugin = {
     // and place values into this.pluginValues[#]
     // (where # corresponds to the index of the variableName)
     instrumentStateFunction: ` 
+        if(this.pluginValues[2] > 1024 || this.pluginValues[2] == undefined) this.pluginValues[2] = 0;
         this.pluginValues[0] = instrument.pluginValues[0];
         this.pluginValues[1] = instrument.pluginValues[1];
-        this.pluginValues[2] = +this.pluginValues[2] + 0.01;
-        if(this.pluginValues[2] > 1024) this.pluginValues[2] = 0;
+        this.pluginValues[2] = this.pluginValues[2] + 0.01;
     `,
     //the names of variables in your synth function whose values come from the instrumentStateFunction
     variableNames: ["corruptionAmount", "corruptionType", "corruptionTime"], 

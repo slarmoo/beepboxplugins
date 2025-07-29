@@ -23,7 +23,7 @@ const effectPlugin: EffectPlugin = {
         if(this.pluginValues[2] > 1024 || this.pluginValues[2] == undefined) this.pluginValues[2] = 0;
         this.pluginValues[0] = instrument.pluginValues[0];
         this.pluginValues[1] = instrument.pluginValues[1];
-        this.pluginValues[2] = this.pluginValues[2] + 0.01;
+        this.pluginValues[2] = this.pluginValues[2] + 1;
     `,
     //the names of variables in your synth function whose values come from the instrumentStateFunction
     variableNames: ["corruptionAmount", "corruptionType", "corruptionTime"], 
@@ -50,6 +50,8 @@ const effectPlugin: EffectPlugin = {
         const corr2 = (corruptionAmount * corruptionTime / 32 - 1)%2 - 1;
         const corr3 = Math.min(Math.max(Math.tan(corruptionAmount * corruptionTime / 32 + 90),-1),1);
         sample = isCorr0*corr0*sample + isCorr1*corr1*sample + isCorr2*corr2*sample + isCorr3*corr3*sample;
+
+        corruptionTime+= 1/runLength;
     `
 }
 

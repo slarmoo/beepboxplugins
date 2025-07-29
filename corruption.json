@@ -11,7 +11,7 @@
         }
     ],
     "delayLineSize": 0,
-    "instrumentStateFunction": " \n        this.pluginValues[0] = instrument.pluginValues[0];\n        this.pluginValues[1] = instrument.pluginValues[1];\n        this.pluginValues[2] = +this.pluginValues[2] + 0.01;\n        if(this.pluginValues[2] > 1024) this.pluginValues[2] = 0;\n    ",
+    "instrumentStateFunction": " \n        if(this.pluginValues[2] > 1024 || this.pluginValues[2] == undefined) this.pluginValues[2] = 0;\n        this.pluginValues[0] = instrument.pluginValues[0];\n        this.pluginValues[1] = instrument.pluginValues[1];\n        this.pluginValues[2] = this.pluginValues[2] + 0.01;\n    ",
     "variableNames": [
         "corruptionAmount",
         "corruptionType",

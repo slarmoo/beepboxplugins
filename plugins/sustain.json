@@ -1,0 +1,22 @@
+{
+    "pluginName": "sustain",
+    "sliders": [
+        {
+            "max": 16,
+            "name": "Sustain"
+        },
+        {
+            "max": 32,
+            "name": "Sustain Vol"
+        }
+    ],
+    "effectOrderIndex": 4,
+    "delayLineSize": 0,
+    "instrumentStateFunction": " \n        const sustainDecay = instrument.pluginValues[0];\n        this.pluginDelayLineSize = Math.pow(2, sustainDecay);\n        this.pluginValues[0] = this.pluginDelayLineSize;\n        this.pluginValues[1] = instrument.pluginValues[1];\n        this.pluginValues[2] = this.pluginValues[2] || 0;\n    ",
+    "variableNames": [
+        "sustainDecay",
+        "sustainVol",
+        "sustainDelayLinePosition"
+    ],
+    "synthFunction": "\n        sustainDelayLinePosition = sustainDelayLinePosition & (sustainDecay - 1);\n        const sustainMix = sustainVol / 64\n        const sustainSample = pluginDelayLine[sustainDelayLinePosition] * sustainMix;\n        pluginDelayLine[sustainDelayLinePosition] = sample;\n        sample += sustainSample;\n        sustainDelayLinePosition++;\n    "
+}

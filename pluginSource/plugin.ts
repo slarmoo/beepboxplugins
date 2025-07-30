@@ -1,17 +1,31 @@
 const effectPlugin: EffectPlugin = {
-    pluginName: "corruption",
+    pluginName: "sustain",
     sliders: [
         {
-            max: 32,
-            name: "Corruption"
+            max: 16,
+            name: "Sustain"
         },
         {
-            max: 3,
-            name: "Corrupt #"
+            max: 32,
+            name: "Sustain Vol"
         }
     ],
-    // there is a pluginDelayLine available to use if desired, 
+    /* when the effect runs in the effect order. It inserts at that index, and moves all other effects down one. 
+        current order: 
+        0. granular
+        1. Distortion
+        2. Bitcrusher
+        3. Ring Modulation
+        4. EQ filter
+        5. Panning //after panning you must read from and write to sampleL and sampleR instead of sample
+        6. Chorus
+        7. Echo
+        8. Reverb
+    */
+    effectOrderIndex: 4, 
+    // there is a pluginDelayLine available to use if desired,
     // but you must set the size here to something other than 0 if you wish to use it
+    // it can be later updated in the instrumentStateFunction by setting this.pluginDelayLineSize
     delayLineSize: 0,
 
     // here you may edit values and create new ones, 
@@ -20,38 +34,22 @@ const effectPlugin: EffectPlugin = {
     // and place values into this.pluginValues[#]
     // (where # corresponds to the index of the variableName)
     instrumentStateFunction: ` 
-        if(this.pluginValues[2] > 1024 || this.pluginValues[2] == undefined) this.pluginValues[2] = 0;
-        this.pluginValues[0] = instrument.pluginValues[0];
+        const sustainDecay = instrument.pluginValues[0];
+        this.pluginDelayLineSize = Math.pow(2, sustainDecay);
+        this.pluginValues[0] = this.pluginDelayLineSize;
         this.pluginValues[1] = instrument.pluginValues[1];
-        this.pluginValues[2] = this.pluginValues[2] + 1;
+        this.pluginValues[2] = this.pluginValues[2] || 0;
     `,
     //the names of variables in your synth function whose values come from the instrumentStateFunction
-    variableNames: ["corruptionAmount", "corruptionType", "corruptionTime"], 
+    variableNames: ["sustainDecay", "sustainVol", "sustainDelayLinePosition"], 
 
     synthFunction: `
-        const isCorr0 = Math.max(-1 * Math.abs(corruptionType - 0)+1, 0);
-        const isCorr1 = Math.max(-1 * Math.abs(corruptionType - 1)+1, 0);
-        const isCorr2 = Math.max(-1 * Math.abs(corruptionType - 2)+1, 0);
-        const isCorr3 = Math.max(-1 * Math.abs(corruptionType - 3)+1, 0);
-        // const isCorr4 = Math.max(-1 * Math.abs(corruptionType - 4)+1, 0);
-        // const isCorr5 = Math.max(-1 * Math.abs(corruptionType - 5)+1, 0);
-        // const isCorr6 = Math.max(-1 * Math.abs(corruptionType - 6)+1, 0);
-        // const isCorr7 = Math.max(-1 * Math.abs(corruptionType - 7)+1, 0);
-        // const isCorr8 = Math.max(-1 * Math.abs(corruptionType - 8)+1, 0);
-        // const isCorr9 = Math.max(-1 * Math.abs(corruptionType - 9)+1, 0);
-
-        const corr0helper0 = Math.max(-1 * Math.abs(corruptionAmount - 0)+1,0);
-        const corr0helperInbetween = Math.min(Math.max(-1 * Math.abs(corruptionAmount - 32/2)+32/2, 0), 1);
-        const corr0helperMax = Math.max(-1 * Math.abs(corruptionAmount - 32)+1, 0);
-        const corr0helperFunction = 2 * Math.floor((corruptionAmount * corruptionTime / 32)% 2)-1;
-
-        const corr0 = corr0helper0 + corr0helperMax * -1 + corr0helperInbetween * corr0helperFunction;
-        const corr1 = (2 / Math.PI) * Math.asin(Math.cos(corruptionAmount * corruptionTime / 32));
-        const corr2 = (corruptionAmount * corruptionTime / 32 - 1)%2 - 1;
-        const corr3 = Math.min(Math.max(Math.tan(corruptionAmount * corruptionTime / 32 + 90),-1),1);
-        sample = isCorr0*corr0*sample + isCorr1*corr1*sample + isCorr2*corr2*sample + isCorr3*corr3*sample;
-
-        corruptionTime+= 1/runLength;
+        sustainDelayLinePosition = sustainDelayLinePosition & (sustainDecay - 1);
+        const sustainMix = sustainVol / 64
+        const sustainSample = pluginDelayLine[sustainDelayLinePosition] * sustainMix;
+        pluginDelayLine[sustainDelayLinePosition] = sample;
+        sample += sustainSample;
+        sustainDelayLinePosition++;
     `
 }
 
@@ -61,13 +59,20 @@ const url = URL.createObjectURL(blob);
 const a = document.getElementById("download") as HTMLAnchorElement;
 if (a != null) {
     a.href = url;
-    // a.addEventListener("click", () => URL.revokeObjectURL(url));
 }
 
+const b = document.getElementById("copy") as HTMLAnchorElement;
+if (b != null) {
+    b.addEventListener("click", () => {
+        navigator.clipboard.writeText(JSON.stringify(effectPlugin));
+        console.log("copied!");
+    });
+}
 
 interface EffectPlugin {
     pluginName: string,
     sliders: Slider[], //max 64
+    effectOrderIndex: number,
     delayLineSize: number,
     instrumentStateFunction: string,
     variableNames: string[],

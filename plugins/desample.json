@@ -1,0 +1,17 @@
+{
+    "pluginName": "desample",
+    "sliders": [
+        {
+            "max": 10,
+            "name": "Desample"
+        }
+    ],
+    "effectOrderIndex": 1,
+    "delayLineSize": 2,
+    "instrumentStateFunction": " \n        const desampleRate = instrument.pluginValues[0];\n        this.pluginValues[0] = Math.pow(2, desampleRate);\n        this.pluginValues[1] = this.pluginValues[1] || 0;\n    ",
+    "variableNames": [
+        "desampleRate",
+        "desampleTime"
+    ],
+    "synthFunction": "\n        desampleTime = desampleTime & (desampleRate - 1);\n        if(desampleTime == 0) {\n            //index 0 for from value, index 1 for 2 value\n            pluginDelayLine[0] = pluginDelayLine[1];\n            pluginDelayLine[1] = sample;\n        }\n        sample = (desampleTime / desampleRate) * pluginDelayLine[0] + ((desampleRate - desampleTime) / desampleRate) * pluginDelayLine[1];\n        desampleTime++;\n    "
+}

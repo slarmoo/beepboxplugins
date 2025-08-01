@@ -1,14 +1,10 @@
 const effectPlugin: EffectPlugin = {
-    pluginName: "sustain",
+    pluginName: "desample",
     sliders: [
         {
             max: 16,
-            name: "Sustain"
+            name: "Desample"
         },
-        {
-            max: 32,
-            name: "Sustain Vol"
-        }
     ],
     /* when the effect runs in the effect order. It inserts at that index, and moves all other effects down one. 
         current order: 
@@ -22,11 +18,11 @@ const effectPlugin: EffectPlugin = {
         7. Echo
         8. Reverb
     */
-    effectOrderIndex: 4, 
+    effectOrderIndex: 1, 
     // there is a pluginDelayLine available to use if desired,
     // but you must set the size here to something other than 0 if you wish to use it
     // it can be later updated in the instrumentStateFunction by setting this.pluginDelayLineSize
-    delayLineSize: 0,
+    delayLineSize: 2,
 
     // here you may edit values and create new ones, 
     // but you must grab values from instrument.pluginValues[#] 
@@ -34,22 +30,22 @@ const effectPlugin: EffectPlugin = {
     // and place values into this.pluginValues[#]
     // (where # corresponds to the index of the variableName)
     instrumentStateFunction: ` 
-        const sustainDecay = instrument.pluginValues[0];
-        this.pluginDelayLineSize = Math.pow(2, sustainDecay);
-        this.pluginValues[0] = this.pluginDelayLineSize;
-        this.pluginValues[1] = instrument.pluginValues[1];
-        this.pluginValues[2] = this.pluginValues[2] || 0;
+        const desampleRate = instrument.pluginValues[0];
+        this.pluginValues[0] = Math.pow(2, desampleRate);
+        this.pluginValues[1] = this.pluginValues[1] || 0;
     `,
     //the names of variables in your synth function whose values come from the instrumentStateFunction
-    variableNames: ["sustainDecay", "sustainVol", "sustainDelayLinePosition"], 
+    variableNames: ["desampleRate", "desampleTime"], 
 
     synthFunction: `
-        sustainDelayLinePosition = sustainDelayLinePosition & (sustainDecay - 1);
-        const sustainMix = sustainVol / 64
-        const sustainSample = pluginDelayLine[sustainDelayLinePosition] * sustainMix;
-        pluginDelayLine[sustainDelayLinePosition] = sample;
-        sample += sustainSample;
-        sustainDelayLinePosition++;
+        desampleTime = desampleTime & (desampleRate - 1);
+        if(desampleTime == 0) {
+            //index 0 for from value, index 1 for 2 value
+            this.pluginDelayLine[0] = this.pluginDelayLine[1];
+            this.pluginDelayLine[1] = sample;
+        }
+        sample = (desampleTime / desampleRate) * this.pluginDelayLine[0] + ((desampleRate - desampleTime) / desampleRate) * this.pluginDelayLine[1];
+        desampleTime++;
     `
 }
 

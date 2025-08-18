@@ -1,11 +1,14 @@
 {
     "pluginName": "sustain",
-    "sliders": [
+    "about": "Holds out the sound for a bit longer by copying and offsetting the waveform",
+    "elements": [
         {
+            "type": "slider",
             "max": 16,
             "name": "Sustain"
         },
         {
+            "type": "slider",
             "max": 32,
             "name": "Sustain Vol"
         }
@@ -18,5 +21,5 @@
         "sustainVol",
         "sustainDelayLinePosition"
     ],
-    "synthFunction": "\n        sustainDelayLinePosition = sustainDelayLinePosition & (sustainDecay - 1);\n        const sustainMix = sustainVol / 64\n        const sustainSample = pluginDelayLine[sustainDelayLinePosition] * sustainMix;\n        pluginDelayLine[sustainDelayLinePosition] = sample;\n        sample += sustainSample;\n        sustainDelayLinePosition++;\n    "
+    "synthFunction": "\n        sustainDelayLinePosition = sustainDelayLinePosition & (sustainDecay - 1);\n        pluginDelayLine[sustainDelayLinePosition] = sample;\n        sample += sustainSample;\n        sustainDelayLinePosition++;\n    "
 }

@@ -15,5 +15,5 @@
         "desampleRate",
         "desampleTime"
     ],
-    "synthFunction": "\n        desampleTime = desampleTime & (desampleRate - 1);\n        if(desampleTime == 0) {\n            //index 0 for from value, index 1 for 2 value\n            this.pluginDelayLine[0] = this.pluginDelayLine[1];\n            this.pluginDelayLine[1] = sample;\n        }\n        sample = (desampleTime / desampleRate) * this.pluginDelayLine[0] + ((desampleRate - desampleTime) / desampleRate) * this.pluginDelayLine[1];\n        desampleTime++;\n    "
+    "synthFunction": "\n        desampleTime = desampleTime & (desampleRate - 1);\n        if(desampleTime == 0) {\n            //index 0 for from value, index 1 for 2 value\n            pluginDelayLine[0] = pluginDelayLine[1];\n            pluginDelayLine[1] = sample;\n        }\n        sample = (desampleTime / desampleRate) * pluginDelayLine[0] + ((desampleRate - desampleTime) / desampleRate) * pluginDelayLine[1];\n        desampleTime++;\n    "
 }

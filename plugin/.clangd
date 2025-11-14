@@ -1,0 +1,2 @@
+CompileFlags:
+    Add: [-target, wasm32-wasi, -nostdlib, -IC:\msys64/clang64/share/wasi-sysroot/include/wasm32-wasip2]

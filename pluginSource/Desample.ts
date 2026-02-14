@@ -1,13 +1,14 @@
-import { EffectPlugin, type Element } from "./plugin";
+import { EffectPlugin, type PluginElement } from "./plugin";
 
 const pluginName: string = "desample";
 
 export default class DesamplePlugin extends EffectPlugin {
     public pluginName: string = pluginName;
     public about: string = "A type of bitcrush where less and less points are used in the waveform";
-    public elements: Element[] = [
+    public elements: PluginElement[] = [
         {
             type: "slider",
+            initialValue: 0,
             max: 16,
             name: "Desample"
         }

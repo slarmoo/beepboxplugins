@@ -1,18 +1,20 @@
-import { EffectPlugin, type Element } from "./plugin";
+import { EffectPlugin, type PluginElement } from "./plugin";
 
 const pluginName: string = "sustain";
 
 export default class SustainPlugin extends EffectPlugin {
     public pluginName: string = pluginName;
     public about: string = "Holds out the sound for a bit longer by copying and offsetting the waveform";
-    public elements: Element[] = [
+    public elements: PluginElement[] = [
         {
             type: "slider",
+            initialValue: 0,
             max: 16,
             name: "Sustain"
         },
         {
             type: "slider",
+            initialValue: 0,
             max: 32,
             name: "Sustain Vol"
         }

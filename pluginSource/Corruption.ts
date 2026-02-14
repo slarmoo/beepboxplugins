@@ -1,18 +1,20 @@
-import { EffectPlugin, type Element } from "./plugin";
+import { EffectPlugin, type PluginElement } from "./plugin";
 
 const pluginName: string = "corruption";
 
 export default class CorruptionPlugin extends EffectPlugin {
     public readonly pluginName: string = pluginName;
     public readonly about: string = "Applies corrupting transformations to the waveform";
-    public readonly elements: Element[] = [
+    public readonly elements: PluginElement[] = [
         {
             type: "slider",
+            initialValue: 0,
             max: 32,
             name: "Corruption"
         },
         {
             type: "dropdown",
+            initialValue: 0,
             options: [
                 "Invert chunks",
                 "Asin",

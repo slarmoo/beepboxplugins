@@ -3,13 +3,20 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 
 // pluginSource/plugin.ts
 var EffectPlugin = class {
+  constructor() {
+    /**
+     * If your plugin uses delay lines and you would like your sound to sustain, change this value to your sustain length
+     */
+    this.delayLineLength = 0;
+  }
   static {
     __name(this, "EffectPlugin");
   }
+  /**
+   * For testing
+   */
   ping() {
     console.log("pong!");
-  }
-  constructor() {
   }
 };
 
@@ -23,11 +30,13 @@ var CorruptionPlugin = class extends EffectPlugin {
     this.elements = [
       {
         type: "slider",
+        initialValue: 0,
         max: 32,
         name: "Corruption"
       },
       {
         type: "dropdown",
+        initialValue: 0,
         options: [
           "Invert chunks",
           "Asin",

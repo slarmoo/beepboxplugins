@@ -72,7 +72,8 @@ export abstract class EffectPlugin {
 interface ElementRoot {
     type: string,
     name: string,
-    initialValue: number
+    initialValue: number,
+    info: string,
 }
 export type PluginElement = Slider | Checkbox | Dropdown | ElementRoot;
 

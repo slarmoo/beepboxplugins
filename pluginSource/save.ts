@@ -1,12 +1,5 @@
 import { EffectPlugin, type PluginElement } from "./plugin";
 
-const epsilon: number = (1.0e-24); // For detecting and avoiding float denormals, which have poor performance.
-
-function sanitize(sample: number): number {
-    if (Number.isFinite(sample) && Math.abs(sample) >= epsilon) return sample;
-    return 0.0;
-}
-
 function houseHolder(samples: Float32Array): void {
     let sum: number = 0;
     for (const val of samples) {
@@ -35,6 +28,13 @@ function hamarand(samples: Float32Array): void {
     }
 }
 
+const epsilon: number = (1.0e-24); // For detecting and avoiding float denormals, which have poor performance.
+
+function sanitize(sample: number): number {
+    if (Number.isFinite(sample) && sample >= epsilon) return sample;
+    return 0.0;
+}
+
 class MultichannelMixedFeedback {
     private readonly delaySamples: number[] = [];
     private readonly delayIndices: number[] = [];
@@ -49,7 +49,9 @@ class MultichannelMixedFeedback {
         for (let i: number = 0; i < this.channels; i++) {
             this.delaySamples[i] = Math.floor(Math.pow(2, i / this.channels) * delayBase);
             if ((!this.delays[i] || this.delaySamples[i] > this.delays[i].length) && this.delaySamples[i] > 0) {
-                this.delays[i] = new Float32Array(this.delaySamples[i]);
+                const newDelay: Float32Array = new Float32Array(this.delaySamples[i]);
+                if (this.delays[i]) for (let j: number = 0; j < this.delays[i].length; j++) newDelay[j] = this.delays[i][j];
+                this.delays[i] = newDelay;
                 this.delayIndices[i] = 0;
             }
             this.mixed[i] = 0;
@@ -73,7 +75,7 @@ class MultichannelMixedFeedback {
     public process(input: Float32Array): Float32Array {
         for (let i: number = 0; i < this.channels; i++) {
             let delayIndex: number = this.delayIndices[i] + 1;
-            if (delayIndex >= this.delaySamples[i]) delayIndex -= this.delaySamples[i];
+            if (delayIndex >= this.delaySamples[i]) delayIndex = 0;
             this.delayed[i] = this.delays[i][delayIndex];
 
             //filter
@@ -82,8 +84,8 @@ class MultichannelMixedFeedback {
         houseHolder(this.mixed);
         for (let i: number = 0; i < this.channels; i++) {
             let delayIndex: number = this.delayIndices[i] + 1;
-            if (delayIndex >= this.delaySamples[i]) delayIndex -= this.delaySamples[i];
-            this.delays[i][this.delayIndices[i]] = sanitize(input[i] + this.mixed[i] * this.decayGain);
+            if (delayIndex >= this.delaySamples[i]) delayIndex = 0;
+            this.delays[i][this.delayIndices[i]] = sanitize(input[i] + this.mixed[i] * this.decayGain) || 0;
             this.delayIndices[i] = delayIndex;
         }
         return this.delayed;
@@ -97,7 +99,7 @@ class DiffusionStep {
     private readonly flips: boolean[] = [];
 
     constructor(private readonly channels: number) {
-        for (let i: number = 0; i < this.channels; i++) {
+        for (let i: number = 0; i < this.channels; i++) {            
             this.flips[i] = Math.round(Math.random()) == 1;
         }
     }
@@ -117,7 +119,9 @@ class DiffusionStep {
 
         for (let i: number = 0; i < this.channels; i++) {
             if ((!this.delays[i] || this.delaySamples[i] > this.delays[i].length) && this.delaySamples[i] > 0) {
-                this.delays[i] = new Float32Array(this.delaySamples[i]);
+                const newDelay: Float32Array = new Float32Array(this.delaySamples[i]);
+                if (this.delays[i]) for (let j: number = 0; j < this.delays[i].length; j++) newDelay[j] = this.delays[i][j];
+                this.delays[i] = newDelay;
                 this.delayIndices[i] = 0;
             }
         }
@@ -166,6 +170,7 @@ class DiffuserHalfLengths {
         for (let i: number = 0; i < this.stepCount; i++) {
             if (this.diffusionSteps[i]) this.diffusionSteps[i].reset();
         }
+        
     }
 
     public initializeDelayLines(sampleRate: number): void {
@@ -215,7 +220,7 @@ export default class ReverbPlusPlugin extends EffectPlugin {
             type: "slider",
             initialValue: 2,
             max: 10,
-            name: "Brightness",
+            name: "brightness",
             info: "How bright the sound is. Lower values result in a darker tone"
         },
         {
@@ -227,8 +232,8 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         },
         {
             type: "slider",
-            initialValue: 5,
-            max: 10,
+            initialValue: 4,
+            max: 8,
             name: "Diffusion",
             info: "How diffuse the reverb is"
         },
@@ -260,13 +265,13 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         this.wet = instrument.pluginValues[0] / ReverbPlusPlugin.wetMax;
         this.roomSizeMs = (instrument.pluginValues[2] + 1) * 25;
         this.brightness = instrument.pluginValues[1] / 10;
-        const diffusion: number = instrument.pluginValues[3] * 10;
-        if (diffusion != this.diffusion) {
+        const diffusion: number = (instrument.pluginValues[3] + 1) * 10;
+        if(diffusion != this.diffusion) {
             this.diffusion = diffusion;
             this.delayLinesInitialized = false; //we changed the diffusion, so we need to rebuild diffuser delay lines
         }
         if (this.feedback) this.feedback.dark = this.brightness;
-        if (this.diffuser && this.diffusion != 0) this.diffuser.diffusion = this.diffusion;
+        if (this.diffuser) this.diffuser.diffusion = this.diffusion;
         if (this.feedback && this.feedback.delayMs != this.roomSizeMs) {
             this.feedback.delayMs = this.roomSizeMs;
             this.feedback.decayGain = Math.pow(10, -3 * (this.roomSizeMs / 1000) / this.rt60);
@@ -274,33 +279,38 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         }
     };
     private inputDuplicated: Float32Array = new Float32Array(this.channels);
-    private static readonly sqrt2: number = 1 / Math.sqrt(2);
     //@ts-ignore
     public synthFunction = (sampleL: number, sampleR: number, runLength: number) => {
         if (!this.diffuser || !this.feedback) return [sampleL, sampleR];
-
+        //duplicate input
         this.inputDuplicated[0] = sampleL;
-        this.inputDuplicated[1] = sampleR;
-        this.inputDuplicated[2] = (sampleL + sampleR) * ReverbPlusPlugin.sqrt2;
-        this.inputDuplicated[3] = (sampleL - sampleR) * ReverbPlusPlugin.sqrt2;
+        this.inputDuplicated[1] = -sampleR;
+        this.inputDuplicated[2] = sampleL;
+        this.inputDuplicated[3] = sampleL;
         this.inputDuplicated[4] = -sampleL;
-        this.inputDuplicated[5] = -sampleR;
-        this.inputDuplicated[6] = -(sampleL + sampleR) * ReverbPlusPlugin.sqrt2;
-        this.inputDuplicated[7] = -(sampleL - sampleR) * ReverbPlusPlugin.sqrt2;
+        this.inputDuplicated[5] = sampleR;
+        this.inputDuplicated[6] = -sampleR;
+        this.inputDuplicated[7] = -sampleR;
 
-        const diffuse: Float32Array = this.diffusion ? this.diffuser.process(this.inputDuplicated): this.inputDuplicated;
+        const diffuse: Float32Array = this.diffuser.process(this.inputDuplicated);
         const longLasting: Float32Array = this.feedback.process(diffuse);
 
-        let outputL: number = longLasting[0] + longLasting[1] + longLasting[2] + longLasting[3] + longLasting[4] + longLasting[5] + longLasting[6] + longLasting[7];
-        let outputR: number = longLasting[4] + longLasting[5] + longLasting[6] + longLasting[7] - longLasting[0] - longLasting[1] - longLasting[2] - longLasting[3];
+        // for (let i: number = 0; i < this.channels; i++) {
+        //     this.inputDuplicated[i] = (1 - this.wet) * this.inputDuplicated[i] + this.wet * longLasting[i] * 2;
+        // }
+
+        //mix back down
+        let outputL: number = longLasting[0] + longLasting[2] + longLasting[4] + longLasting[6];
+        let outputR: number = longLasting[1] + longLasting[3] + longLasting[5] + longLasting[7];
         outputL /= 2; //scale output
-        outputR /= 2;
+        outputR /= 2; 
 
         outputL = (1 - this.wet) * sampleL + this.wet * outputL;
         outputR = (1 - this.wet) * sampleR + this.wet * outputR;
 
         return [outputL, outputR];
     };
+    
 
     constructor() {
         super();

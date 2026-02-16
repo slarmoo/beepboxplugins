@@ -10,7 +10,8 @@ export default class CorruptionPlugin extends EffectPlugin {
             type: "slider",
             initialValue: 0,
             max: 32,
-            name: "Corruption"
+            name: "Corruption",
+            info: "How much corruption is applied"
         },
         {
             type: "dropdown",
@@ -21,7 +22,8 @@ export default class CorruptionPlugin extends EffectPlugin {
                 "Engine",
                 "Buzz"
             ],
-            name: "Corrupt type"
+            name: "Corrupt type",
+            info: "The type of corruption applied. Note that invert chunks at max value simply inverts the wave"
         }
     ];
     public effectOrderIndex: number | number[] = 4;

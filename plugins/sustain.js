@@ -30,20 +30,22 @@ var SustainPlugin = class extends EffectPlugin {
     this.elements = [
       {
         type: "slider",
-        initialValue: 0,
+        initialValue: 8,
         max: 16,
-        name: "Sustain"
+        name: "Sustain",
+        info: "How long the sustain is, from barely a few milliseconds to several beats"
       },
       {
         type: "slider",
-        initialValue: 0,
+        initialValue: 16,
         max: 32,
-        name: "Sustain Vol"
+        name: "Sustain Vol",
+        info: "How audible the sustain is"
       }
     ];
     this.effectOrderIndex = 4;
-    this.sustainDecay = 0;
-    this.sustainVol = 0;
+    this.sustainDecay = Math.pow(2, 8);
+    this.sustainVol = 16;
     this.sustainDelayLine = null;
     this.sustainDelayLinePosition = 0;
     this.reset = /* @__PURE__ */ __name(() => {

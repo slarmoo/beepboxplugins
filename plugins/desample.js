@@ -32,7 +32,8 @@ var DesamplePlugin = class extends EffectPlugin {
         type: "slider",
         initialValue: 0,
         max: 16,
-        name: "Desample"
+        name: "Desample",
+        info: "The distance between points that are interpolated between. More desample results in a less and less recognizable sound"
       }
     ];
     this.effectOrderIndex = 1;

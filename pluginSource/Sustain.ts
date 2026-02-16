@@ -8,20 +8,22 @@ export default class SustainPlugin extends EffectPlugin {
     public elements: PluginElement[] = [
         {
             type: "slider",
-            initialValue: 0,
+            initialValue: 8,
             max: 16,
-            name: "Sustain"
+            name: "Sustain",
+            info: "How long the sustain is, from barely a few milliseconds to several beats"
         },
         {
             type: "slider",
-            initialValue: 0,
+            initialValue: 16,
             max: 32,
-            name: "Sustain Vol"
+            name: "Sustain Vol",
+            info: "How audible the sustain is"
         }
     ];
     public effectOrderIndex: number | number[] = 4;
-    private sustainDecay: number = 0;
-    private sustainVol: number = 0;
+    private sustainDecay: number = Math.pow(2, 8);
+    private sustainVol: number = 16;
     private sustainDelayLine: Float32Array | null = null;
     private sustainDelayLinePosition: number = 0;
     public reset = () => { 

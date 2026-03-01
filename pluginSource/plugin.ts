@@ -49,15 +49,16 @@ export abstract class EffectPlugin {
     public abstract initializeDelayLines: (samplesPerTick: number) => void;
 
     /**
-     * Here you can grab the instrument values at instrument.pluginValues[index], where index corresponds to the order of your ui elements. 
+     * Here you can grab the (envelope applied) instrument values, where index corresponds to the order of your ui elements. 
+     * If you don't want to do per sample interpolation then you can ignore pluginEnds. 
      */
-    public abstract instrumentStateFunction: (instrument: any) => void;
+    public abstract instrumentStateFunction: (pluginStarts: number[], pluginEnds: number[]) => void;
     /** The per sample calculations.
     * Your inputs are the variable names above and a sample (or sampleL and sampleR if after panning)
     * Your outputs are sample (or sampleL and sampleR if after panning)
     * Is in string form 
     * */
-    public abstract synthFunction: ((sample: number, runLength: number) => number) | ((sampleL: number, sampleR: number, runLength: number) => [number, number]);
+    public abstract synthFunction: (sample: number | [number, number], runLength: number) => number | [number, number];
 
     /**
      * For testing
@@ -70,7 +71,7 @@ export abstract class EffectPlugin {
 }
 
 interface ElementRoot {
-    type: string,
+    type: ElementType,
     name: string,
     initialValue: number,
     info: string,
@@ -78,16 +79,23 @@ interface ElementRoot {
 export type PluginElement = Slider | Checkbox | Dropdown | ElementRoot;
 
 interface Slider extends ElementRoot {
-    type: "slider",
+    type: ElementType.slider,
     max: number, //max 64
+    hasEnvelope: boolean,
     //mod interaction?
 }
 
 interface Checkbox extends ElementRoot {
-    type: "checkbox"
+    type: ElementType.checkbox
 }
 
 interface Dropdown extends ElementRoot {
-    type: "dropdown",
+    type: ElementType.dropdown,
     options: string[] //max 64
+}
+
+export enum ElementType {
+    slider,
+    checkbox,
+    dropdown
 }

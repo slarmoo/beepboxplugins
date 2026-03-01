@@ -29,23 +29,26 @@ var SustainPlugin = class extends EffectPlugin {
     this.about = "Holds out the sound for a bit longer by copying and offsetting the waveform";
     this.elements = [
       {
-        type: "slider",
+        type: 0 /* slider */,
         initialValue: 8,
         max: 16,
         name: "Sustain",
-        info: "How long the sustain is, from barely a few milliseconds to several beats"
+        info: "How long the sustain is, from barely a few milliseconds to several beats",
+        hasEnvelope: false
       },
       {
-        type: "slider",
+        type: 0 /* slider */,
         initialValue: 16,
         max: 32,
         name: "Sustain Vol",
-        info: "How audible the sustain is"
+        info: "How audible the sustain is",
+        hasEnvelope: true
       }
     ];
     this.effectOrderIndex = 4;
     this.sustainDecay = Math.pow(2, 8);
     this.sustainVol = 16;
+    this.sustainVolDelta = 0;
     this.sustainDelayLine = null;
     this.sustainDelayLinePosition = 0;
     this.reset = /* @__PURE__ */ __name(() => {
@@ -58,19 +61,22 @@ var SustainPlugin = class extends EffectPlugin {
         this.sustainDelayLine = new Float32Array(this.sustainDecay);
       }
     }, "initializeDelayLines");
-    this.instrumentStateFunction = /* @__PURE__ */ __name((instrument) => {
-      const sustainDecay = instrument.pluginValues[0];
+    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds) => {
+      const sustainDecay = pluginStarts[0];
       this.sustainDecay = Math.pow(2, sustainDecay);
-      this.sustainVol = instrument.pluginValues[1];
+      this.sustainVol = pluginStarts[1];
+      this.sustainVolDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
     }, "instrumentStateFunction");
     //@ts-ignore
-    this.synthFunction = /* @__PURE__ */ __name((sample, runLength) => {
+    this.synthFunction = /* @__PURE__ */ __name((samples, runLength) => {
+      let sample = samples;
       if (this.sustainDecay == 0 || !this.sustainDelayLine) return sample;
       this.sustainDelayLinePosition = this.sustainDelayLinePosition & this.sustainDecay - 1;
       const sustainSample = this.sustainDelayLine[this.sustainDelayLinePosition] * this.sustainVol / 64;
       this.sustainDelayLine[this.sustainDelayLinePosition] = sample;
       sample += sustainSample;
       this.sustainDelayLinePosition++;
+      this.sustainVol += this.sustainVolDelta;
       return sample;
     }, "synthFunction");
   }

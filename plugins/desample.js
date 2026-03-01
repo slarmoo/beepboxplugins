@@ -29,11 +29,12 @@ var DesamplePlugin = class extends EffectPlugin {
     this.about = "A type of bitcrush where less and less points are used in the waveform";
     this.elements = [
       {
-        type: "slider",
-        initialValue: 0,
+        type: 0 /* slider */,
+        initialValue: 2,
         max: 16,
         name: "Desample",
-        info: "The distance between points that are interpolated between. More desample results in a less and less recognizable sound"
+        info: "The distance between points that are interpolated between. More desample results in a less and less recognizable sound",
+        hasEnvelope: false
       }
     ];
     this.effectOrderIndex = 1;
@@ -48,12 +49,14 @@ var DesamplePlugin = class extends EffectPlugin {
     //@ts-ignore
     this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick) => {
     }, "initializeDelayLines");
-    this.instrumentStateFunction = /* @__PURE__ */ __name((instrument) => {
-      const desampleRate = instrument.pluginValues[0];
+    //@ts-ignore
+    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds) => {
+      const desampleRate = pluginStarts[0];
       this.desampleRate = Math.pow(2, desampleRate);
     }, "instrumentStateFunction");
     //@ts-ignore
-    this.synthFunction = /* @__PURE__ */ __name((sample, runLength) => {
+    this.synthFunction = /* @__PURE__ */ __name((samples, runLength) => {
+      let sample = samples;
       this.desampleTime = this.desampleTime & this.desampleRate - 1;
       if (this.desampleTime == 0) {
         this.delayLine[0] = this.delayLine[1];

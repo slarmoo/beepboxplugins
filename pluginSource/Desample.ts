@@ -1,4 +1,4 @@
-import { EffectPlugin, type PluginElement } from "./plugin";
+import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
 
 const pluginName: string = "desample";
 
@@ -7,11 +7,12 @@ export default class DesamplePlugin extends EffectPlugin {
     public about: string = "A type of bitcrush where less and less points are used in the waveform";
     public elements: PluginElement[] = [
         {
-            type: "slider",
-            initialValue: 0,
+            type: ElementType.slider,
+            initialValue: 2,
             max: 16,
             name: "Desample",
-            info: "The distance between points that are interpolated between. More desample results in a less and less recognizable sound"
+            info: "The distance between points that are interpolated between. More desample results in a less and less recognizable sound",
+            hasEnvelope: false
         }
     ];
     public effectOrderIndex: number | number[] = 1;
@@ -25,12 +26,14 @@ export default class DesamplePlugin extends EffectPlugin {
     private delayLine: Float32Array = new Float32Array(2);
     //@ts-ignore
     public initializeDelayLines = (samplesPerTick: number) => { };
-    public instrumentStateFunction = (instrument: any) => {
-        const desampleRate = instrument.pluginValues[0];
+    //@ts-ignore
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
+        const desampleRate = pluginStarts[0];
         this.desampleRate = Math.pow(2, desampleRate);
     };
     //@ts-ignore
-    public synthFunction = (sample: number, runLength: number) => {
+    public synthFunction = (samples: number | [number, number], runLength: number): number | [number, number] => {
+        let sample: number = samples as number;
         this.desampleTime = this.desampleTime & (this.desampleRate - 1);
         if (this.desampleTime == 0) {
             //index 0 for from value, index 1 for 2 value

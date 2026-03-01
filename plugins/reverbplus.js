@@ -21,7 +21,7 @@ var EffectPlugin = class {
 };
 
 // pluginSource/ReverbPlus.ts
-var epsilon = 1e-24;
+var epsilon = 1e-20;
 function sanitize(sample) {
   if (Number.isFinite(sample) && Math.abs(sample) >= epsilon) return sample;
   return 0;
@@ -199,7 +199,7 @@ var DiffuserHalfLengths = class {
 var pluginName = "reverb+";
 var ReverbPlusPlugin = class _ReverbPlusPlugin extends EffectPlugin {
   constructor() {
-    super();
+    super(...arguments);
     this.pluginName = pluginName;
     this.about = "A better implementation of reverb based on the ADC talk found here: https://youtu.be/6ZK2Goiyotk?si=HpSDjgY5dtoMC-y6";
     this.channels = 8;
@@ -208,37 +208,43 @@ var ReverbPlusPlugin = class _ReverbPlusPlugin extends EffectPlugin {
     this.rt60 = 10;
     this.wet = 1;
     this.brightness = 0.2;
+    this.wetDelta = 0;
+    this.brightDelta = 0;
     this.diffusion = 50;
     this.feedback = null;
     this.diffuser = null;
     this.elements = [
       {
-        type: "slider",
+        type: 0 /* slider */,
         initialValue: _ReverbPlusPlugin.wetMax,
         max: _ReverbPlusPlugin.wetMax,
         name: "Reverb+",
-        info: "The dry/wet mix of the reverb+ plugin"
+        info: "The dry/wet mix of the reverb+ plugin",
+        hasEnvelope: true
       },
       {
-        type: "slider",
+        type: 0 /* slider */,
         initialValue: 2,
         max: 10,
         name: "Brightness",
-        info: "How bright the sound is. Lower values result in a darker tone"
+        info: "How bright the sound is. Lower values result in a darker tone",
+        hasEnvelope: true
       },
       {
-        type: "slider",
+        type: 0 /* slider */,
         initialValue: 5,
         max: 8,
         name: "Room Size",
-        info: "How long the feedback of the reverb lasts"
+        info: "How long the feedback of the reverb lasts",
+        hasEnvelope: false
       },
       {
-        type: "slider",
+        type: 0 /* slider */,
         initialValue: 5,
         max: 10,
         name: "Diffusion",
-        info: "How diffuse the reverb is"
+        info: "How diffuse the reverb is",
+        hasEnvelope: false
       }
     ];
     this.effectOrderIndex = 9;
@@ -262,11 +268,13 @@ var ReverbPlusPlugin = class _ReverbPlusPlugin extends EffectPlugin {
       this.diffuser.initializeDelayLines(this.prevSampleRate);
       this.delayLinesInitialized = true;
     }, "initializeDelayLines");
-    this.instrumentStateFunction = /* @__PURE__ */ __name((instrument) => {
-      this.wet = instrument.pluginValues[0] / _ReverbPlusPlugin.wetMax;
-      this.roomSizeMs = (instrument.pluginValues[2] + 1) * 25;
-      this.brightness = instrument.pluginValues[1] / 10;
-      const diffusion = instrument.pluginValues[3] * 10;
+    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds) => {
+      this.wet = pluginStarts[0] / _ReverbPlusPlugin.wetMax;
+      this.roomSizeMs = (pluginStarts[2] + 1) * 25;
+      this.brightness = pluginStarts[1] / 10;
+      this.wetDelta = (pluginEnds[0] - pluginStarts[0]) / sampleRate;
+      this.brightDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
+      const diffusion = pluginStarts[3] * 10;
       if (diffusion != this.diffusion) {
         this.diffusion = diffusion;
         this.delayLinesInitialized = false;
@@ -281,8 +289,9 @@ var ReverbPlusPlugin = class _ReverbPlusPlugin extends EffectPlugin {
     }, "instrumentStateFunction");
     this.inputDuplicated = new Float32Array(this.channels);
     //@ts-ignore
-    this.synthFunction = /* @__PURE__ */ __name((sampleL, sampleR, runLength) => {
-      if (!this.diffuser || !this.feedback) return [sampleL, sampleR];
+    this.synthFunction = /* @__PURE__ */ __name((samples, runLength) => {
+      if (!this.diffuser || !this.feedback || typeof samples == "number") return samples;
+      const [sampleL, sampleR] = samples;
       this.inputDuplicated[0] = sampleL;
       this.inputDuplicated[1] = sampleR;
       this.inputDuplicated[2] = (sampleL + sampleR) * _ReverbPlusPlugin.sqrt2;
@@ -297,9 +306,11 @@ var ReverbPlusPlugin = class _ReverbPlusPlugin extends EffectPlugin {
       let outputR = longLasting[4] + longLasting[5] + longLasting[6] + longLasting[7] - longLasting[0] - longLasting[1] - longLasting[2] - longLasting[3];
       outputL /= 2;
       outputR /= 2;
-      outputL = (1 - this.wet) * sampleL + this.wet * outputL;
-      outputR = (1 - this.wet) * sampleR + this.wet * outputR;
-      return [outputL, outputR];
+      samples[0] = (1 - this.wet) * sampleL + this.wet * outputL;
+      samples[1] = (1 - this.wet) * sampleR + this.wet * outputR;
+      this.wet += this.wetDelta;
+      this.feedback.dark += this.brightDelta;
+      return samples;
     }, "synthFunction");
   }
   static {

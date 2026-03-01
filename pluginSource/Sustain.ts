@@ -1,4 +1,4 @@
-import { EffectPlugin, type PluginElement } from "./plugin";
+import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
 
 const pluginName: string = "sustain";
 
@@ -7,23 +7,26 @@ export default class SustainPlugin extends EffectPlugin {
     public about: string = "Holds out the sound for a bit longer by copying and offsetting the waveform";
     public elements: PluginElement[] = [
         {
-            type: "slider",
+            type: ElementType.slider,
             initialValue: 8,
             max: 16,
             name: "Sustain",
-            info: "How long the sustain is, from barely a few milliseconds to several beats"
+            info: "How long the sustain is, from barely a few milliseconds to several beats",
+            hasEnvelope: false,
         },
         {
-            type: "slider",
+            type: ElementType.slider,
             initialValue: 16,
             max: 32,
             name: "Sustain Vol",
-            info: "How audible the sustain is"
+            info: "How audible the sustain is",
+            hasEnvelope: true,
         }
     ];
     public effectOrderIndex: number | number[] = 4;
     private sustainDecay: number = Math.pow(2, 8);
     private sustainVol: number = 16;
+    private sustainVolDelta: number = 0;
     private sustainDelayLine: Float32Array | null = null;
     private sustainDelayLinePosition: number = 0;
     public reset = () => { 
@@ -36,19 +39,23 @@ export default class SustainPlugin extends EffectPlugin {
             this.sustainDelayLine = new Float32Array(this.sustainDecay);
         }
     };
-    public instrumentStateFunction = (instrument: any) => {
-        const sustainDecay = instrument.pluginValues[0];
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
+        const sustainDecay = pluginStarts[0];
         this.sustainDecay = Math.pow(2, sustainDecay);
-        this.sustainVol = instrument.pluginValues[1];
+        this.sustainVol = pluginStarts[1];
+        //@ts-ignore
+        this.sustainVolDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
     };
     //@ts-ignore
-    public synthFunction = (sample: number, runLength: number) => {
+    public synthFunction = (samples: number | [number, number], runLength: number): number | [number, number] => {
+        let sample: number = samples as number;
         if (this.sustainDecay == 0 || !this.sustainDelayLine) return sample;
         this.sustainDelayLinePosition = this.sustainDelayLinePosition & (this.sustainDecay - 1);
         const sustainSample = this.sustainDelayLine![this.sustainDelayLinePosition] * this.sustainVol / 64;
         this.sustainDelayLine![this.sustainDelayLinePosition] = sample;
         sample += sustainSample;
         this.sustainDelayLinePosition++;
+        this.sustainVol += this.sustainVolDelta;
         return sample;
     };
     

@@ -1,4 +1,4 @@
-import { EffectPlugin, type PluginElement } from "./plugin";
+import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
 
 const pluginName: string = "corruption";
 
@@ -7,15 +7,16 @@ export default class CorruptionPlugin extends EffectPlugin {
     public readonly about: string = "Applies corrupting transformations to the waveform";
     public readonly elements: PluginElement[] = [
         {
-            type: "slider",
-            initialValue: 0,
+            type: ElementType.slider,
+            initialValue: 3,
             max: 32,
             name: "Corruption",
-            info: "How much corruption is applied"
+            info: "How much corruption is applied",
+            hasEnvelope: true
         },
         {
-            type: "dropdown",
-            initialValue: 0,
+            type: ElementType.dropdown,
+            initialValue: 1,
             options: [
                 "Invert chunks",
                 "Asin",
@@ -30,20 +31,24 @@ export default class CorruptionPlugin extends EffectPlugin {
     //@ts-ignore
     public initializeDelayLines = (samplesPerTick: number) => { };
     private corruptionAmount: number = 0;
+    private corruptionDelta: number = 0;
     private corruptionType: number = 0;
     private corruptionTime: number = 0;
     public reset = () => {
         this.corruptionTime = 0;
     }
-    public instrumentStateFunction = (instrument: any) => {
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
         if (this.corruptionTime > 1024) this.corruptionTime = 0;
-        this.corruptionAmount = instrument.pluginValues[0];
-        this.corruptionType = instrument.pluginValues[1];
+        this.corruptionAmount = pluginStarts[0];
+        //@ts-ignore
+        this.corruptionDelta = (pluginEnds[0] - pluginStarts[0]) / sampleRate;
+        this.corruptionType = pluginStarts[1];
         this.corruptionTime = this.corruptionTime + 1;
     };
     
 
-    public synthFunction = (sample: number, runLength: number) => {
+    public synthFunction = (samples: number | [number, number], runLength: number): number | [number, number] => {
+        let sample: number = samples as number;
         const isCorr0 = Math.max(-1 * Math.abs(this.corruptionType - 0) + 1, 0);
         const isCorr1 = Math.max(-1 * Math.abs(this.corruptionType - 1) + 1, 0);
         const isCorr2 = Math.max(-1 * Math.abs(this.corruptionType - 2) + 1, 0);
@@ -65,6 +70,7 @@ export default class CorruptionPlugin extends EffectPlugin {
         const corr3 = -1 * Math.min(Math.max(Math.tan(this.corruptionAmount * this.corruptionTime / 32 + 90), -1), 1);
         sample = isCorr0 * corr0 * sample + isCorr1 * corr1 * sample + isCorr2 * corr2 * sample + isCorr3 * corr3 * sample;
         this.corruptionTime += 1 / runLength;
+        this.corruptionAmount += this.corruptionDelta;
         return sample;
     };
 }

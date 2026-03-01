@@ -1,6 +1,6 @@
-import { EffectPlugin, type PluginElement } from "./plugin";
+import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
 
-const epsilon: number = (1.0e-24); // For detecting and avoiding float denormals, which have poor performance.
+const epsilon: number = (1.0e-20); // For detecting and avoiding float denormals, which have poor performance.
 
 function sanitize(sample: number): number {
     if (Number.isFinite(sample) && Math.abs(sample) >= epsilon) return sample;
@@ -199,38 +199,44 @@ export default class ReverbPlusPlugin extends EffectPlugin {
     private static readonly wetMax: number = 16;
     private wet: number = 1;
     private brightness: number = 0.2;
+    private wetDelta: number = 0;
+    private brightDelta: number = 0;
     private diffusion: number = 50;
     private feedback: MultichannelMixedFeedback | null = null;
     private diffuser: DiffuserHalfLengths | null = null;
 
     public elements: PluginElement[] = [
         {
-            type: "slider",
+            type: ElementType.slider,
             initialValue: ReverbPlusPlugin.wetMax,
             max: ReverbPlusPlugin.wetMax,
             name: "Reverb+",
-            info: "The dry/wet mix of the reverb+ plugin"
+            info: "The dry/wet mix of the reverb+ plugin",
+            hasEnvelope: true,
         },
         {
-            type: "slider",
+            type: ElementType.slider,
             initialValue: 2,
             max: 10,
             name: "Brightness",
-            info: "How bright the sound is. Lower values result in a darker tone"
+            info: "How bright the sound is. Lower values result in a darker tone",
+            hasEnvelope: true,
         },
         {
-            type: "slider",
+            type: ElementType.slider,
             initialValue: 5,
             max: 8,
             name: "Room Size",
-            info: "How long the feedback of the reverb lasts"
+            info: "How long the feedback of the reverb lasts",
+            hasEnvelope: false,
         },
         {
-            type: "slider",
+            type: ElementType.slider,
             initialValue: 5,
             max: 10,
             name: "Diffusion",
-            info: "How diffuse the reverb is"
+            info: "How diffuse the reverb is",
+            hasEnvelope: false,
         },
     ];
     public effectOrderIndex: number | number[] = 9;
@@ -256,11 +262,13 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         this.diffuser.initializeDelayLines(this.prevSampleRate);
         this.delayLinesInitialized = true;
     };
-    public instrumentStateFunction = (instrument: any) => {
-        this.wet = instrument.pluginValues[0] / ReverbPlusPlugin.wetMax;
-        this.roomSizeMs = (instrument.pluginValues[2] + 1) * 25;
-        this.brightness = instrument.pluginValues[1] / 10;
-        const diffusion: number = instrument.pluginValues[3] * 10;
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
+        this.wet = pluginStarts[0] / ReverbPlusPlugin.wetMax;
+        this.roomSizeMs = (pluginStarts[2] + 1) * 25;
+        this.brightness = pluginStarts[1] / 10;
+        //@ts-ignore
+        this.wetDelta = (pluginEnds[0] - pluginStarts[0]) / sampleRate; this.brightDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
+        const diffusion: number = pluginStarts[3] * 10;
         if (diffusion != this.diffusion) {
             this.diffusion = diffusion;
             this.delayLinesInitialized = false; //we changed the diffusion, so we need to rebuild diffuser delay lines
@@ -276,9 +284,9 @@ export default class ReverbPlusPlugin extends EffectPlugin {
     private inputDuplicated: Float32Array = new Float32Array(this.channels);
     private static readonly sqrt2: number = 1 / Math.sqrt(2);
     //@ts-ignore
-    public synthFunction = (sampleL: number, sampleR: number, runLength: number) => {
-        if (!this.diffuser || !this.feedback) return [sampleL, sampleR];
-
+    public synthFunction = (samples: number | [number, number], runLength: number): number | [number, number] => {
+        if (!this.diffuser || !this.feedback || typeof samples == "number") return samples;
+        const [sampleL, sampleR] = samples as [number, number];
         this.inputDuplicated[0] = sampleL;
         this.inputDuplicated[1] = sampleR;
         this.inputDuplicated[2] = (sampleL + sampleR) * ReverbPlusPlugin.sqrt2;
@@ -296,15 +304,14 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         outputL /= 2; //scale output
         outputR /= 2;
 
-        outputL = (1 - this.wet) * sampleL + this.wet * outputL;
-        outputR = (1 - this.wet) * sampleR + this.wet * outputR;
+        samples[0] = (1 - this.wet) * sampleL + this.wet * outputL;
+        samples[1] = (1 - this.wet) * sampleR + this.wet * outputR;
 
-        return [outputL, outputR];
+        this.wet += this.wetDelta;
+        this.feedback.dark += this.brightDelta;
+
+        return samples;
     };
-
-    constructor() {
-        super();
-    }
 }
 
 //required

@@ -56,16 +56,16 @@ var SustainPlugin = class extends EffectPlugin {
       if (this.sustainDelayLine) for (let i = 0; i < this.sustainDecay; i++) this.sustainDelayLine[i] = 0;
     }, "reset");
     //@ts-ignore
-    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick) => {
+    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick, samplesPerSecond) => {
       if ((!this.sustainDelayLine || this.sustainDelayLine.length < this.sustainDecay) && this.sustainDecay > 0) {
         this.sustainDelayLine = new Float32Array(this.sustainDecay);
       }
     }, "initializeDelayLines");
-    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds) => {
+    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds, samplesPerTick) => {
       const sustainDecay = pluginStarts[0];
       this.sustainDecay = Math.pow(2, sustainDecay);
       this.sustainVol = pluginStarts[1];
-      this.sustainVolDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
+      this.sustainVolDelta = (pluginEnds[1] - pluginStarts[1]) / samplesPerTick;
     }, "instrumentStateFunction");
     //@ts-ignore
     this.synthFunction = /* @__PURE__ */ __name((samples, runLength) => {

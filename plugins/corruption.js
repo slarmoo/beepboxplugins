@@ -51,7 +51,7 @@ var CorruptionPlugin = class extends EffectPlugin {
     ];
     this.effectOrderIndex = 4;
     //@ts-ignore
-    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick) => {
+    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick, samplesPerSecond) => {
     }, "initializeDelayLines");
     this.corruptionAmount = 0;
     this.corruptionDelta = 0;
@@ -60,10 +60,10 @@ var CorruptionPlugin = class extends EffectPlugin {
     this.reset = /* @__PURE__ */ __name(() => {
       this.corruptionTime = 0;
     }, "reset");
-    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds) => {
+    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds, samplesPerTick) => {
       if (this.corruptionTime > 1024) this.corruptionTime = 0;
       this.corruptionAmount = pluginStarts[0];
-      this.corruptionDelta = (pluginEnds[0] - pluginStarts[0]) / sampleRate;
+      this.corruptionDelta = (pluginEnds[0] - pluginStarts[0]) / samplesPerTick;
       this.corruptionType = pluginStarts[1];
       this.corruptionTime = this.corruptionTime + 1;
     }, "instrumentStateFunction");

@@ -34,17 +34,16 @@ export default class SustainPlugin extends EffectPlugin {
         if (this.sustainDelayLine) for (let i: number = 0; i < this.sustainDecay; i++) this.sustainDelayLine[i] = 0.0;
     };
     //@ts-ignore
-    public initializeDelayLines = (samplesPerTick: number) => { 
+    public initializeDelayLines = (samplesPerTick: number, samplesPerSecond: number) => { 
         if ((!this.sustainDelayLine || this.sustainDelayLine.length < this.sustainDecay) && this.sustainDecay > 0) {
             this.sustainDelayLine = new Float32Array(this.sustainDecay);
         }
     };
-    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[], samplesPerTick: number) => {
         const sustainDecay = pluginStarts[0];
         this.sustainDecay = Math.pow(2, sustainDecay);
         this.sustainVol = pluginStarts[1];
-        //@ts-ignore
-        this.sustainVolDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
+        this.sustainVolDelta = (pluginEnds[1] - pluginStarts[1]) / samplesPerTick;
     };
     //@ts-ignore
     public synthFunction = (samples: number | [number, number], runLength: number): number | [number, number] => {

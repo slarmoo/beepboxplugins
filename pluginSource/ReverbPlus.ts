@@ -247,14 +247,12 @@ export default class ReverbPlusPlugin extends EffectPlugin {
     private delayLinesInitialized: boolean = false;
     private prevSampleRate: number = 0;
     //@ts-ignore
-    public initializeDelayLines = (samplesPerTick: number) => {
+    public initializeDelayLines = (samplesPerTick: number, samplesPerSecond: number) => {
         if (!this.feedback) this.feedback = new MultichannelMixedFeedback(this.channels, this.roomSizeMs, Math.pow(10, -3 * (this.roomSizeMs / 1000) / this.rt60));
         if (!this.diffuser) this.diffuser = new DiffuserHalfLengths(this.channels, this.diffusionSteps, this.diffusion);
-        //@ts-ignore
-        if (this.prevSampleRate != sampleRate) {
+        if (this.prevSampleRate != samplesPerSecond) {
             this.delayLinesInitialized = false;
-            //@ts-ignore
-            this.prevSampleRate = sampleRate;
+            this.prevSampleRate = samplesPerSecond;
             this.delayLineLength = 0.1 * this.roomSizeMs * this.prevSampleRate;
         }
         if (this.delayLinesInitialized) return;
@@ -262,12 +260,12 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         this.diffuser.initializeDelayLines(this.prevSampleRate);
         this.delayLinesInitialized = true;
     };
-    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
-        this.wet = pluginStarts[0] / ReverbPlusPlugin.wetMax;
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[], samplesPerTick: number) => {
+        this.wet = Math.max(pluginStarts[0] / ReverbPlusPlugin.wetMax, 1);
         this.roomSizeMs = (pluginStarts[2] + 1) * 25;
-        this.brightness = pluginStarts[1] / 10;
-        //@ts-ignore
-        this.wetDelta = (pluginEnds[0] - pluginStarts[0]) / sampleRate; this.brightDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
+        this.brightness = Math.max(pluginStarts[1] / 10, 1);
+        this.wetDelta = (pluginEnds[0] - pluginStarts[0]) / samplesPerTick;
+        this.brightDelta = (pluginEnds[1] - pluginStarts[1]) / samplesPerTick;
         const diffusion: number = pluginStarts[3] * 10;
         if (diffusion != this.diffusion) {
             this.diffusion = diffusion;

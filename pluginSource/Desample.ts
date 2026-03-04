@@ -25,9 +25,9 @@ export default class DesamplePlugin extends EffectPlugin {
     };
     private delayLine: Float32Array = new Float32Array(2);
     //@ts-ignore
-    public initializeDelayLines = (samplesPerTick: number) => { };
+    public initializeDelayLines = (samplesPerTick: number, samplesPerSecond: number) => { };
     //@ts-ignore
-    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[], samplesPerTick: number) => {
         const desampleRate = pluginStarts[0];
         this.desampleRate = Math.pow(2, desampleRate);
     };

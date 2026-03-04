@@ -29,7 +29,7 @@ export default class CorruptionPlugin extends EffectPlugin {
     ];
     public effectOrderIndex: number | number[] = 4;
     //@ts-ignore
-    public initializeDelayLines = (samplesPerTick: number) => { };
+    public initializeDelayLines = (samplesPerTick: number, samplesPerSecond: number) => { };
     private corruptionAmount: number = 0;
     private corruptionDelta: number = 0;
     private corruptionType: number = 0;
@@ -37,11 +37,11 @@ export default class CorruptionPlugin extends EffectPlugin {
     public reset = () => {
         this.corruptionTime = 0;
     }
-    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[]) => {
+    public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[], samplesPerTick: number) => {
         if (this.corruptionTime > 1024) this.corruptionTime = 0;
         this.corruptionAmount = pluginStarts[0];
         //@ts-ignore
-        this.corruptionDelta = (pluginEnds[0] - pluginStarts[0]) / sampleRate;
+        this.corruptionDelta = (pluginEnds[0] - pluginStarts[0]) / samplesPerTick;
         this.corruptionType = pluginStarts[1];
         this.corruptionTime = this.corruptionTime + 1;
     };

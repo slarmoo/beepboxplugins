@@ -70,8 +70,8 @@ var MultichannelMixedFeedback = class {
   static {
     __name(this, "MultichannelMixedFeedback");
   }
-  initializeDelayLines(sampleRate2) {
-    const delayBase = this.delayMs * 1e-3 * sampleRate2;
+  initializeDelayLines(sampleRate) {
+    const delayBase = this.delayMs * 1e-3 * sampleRate;
     for (let i = 0; i < this.channels; i++) {
       this.delaySamples[i] = Math.floor(Math.pow(2, i / this.channels) * delayBase);
       if ((!this.delays[i] || this.delaySamples[i] > this.delays[i].length) && this.delaySamples[i] > 0) {
@@ -123,10 +123,10 @@ var DiffusionStep = class {
   static {
     __name(this, "DiffusionStep");
   }
-  initializeDelayLines(sampleRate2, delayMsRange = 50) {
+  initializeDelayLines(sampleRate, delayMsRange = 50) {
     if (this.delayMsRange != delayMsRange) {
       this.delayMsRange = delayMsRange;
-      const delaySamplesRange = this.delayMsRange * 1e-3 * sampleRate2;
+      const delaySamplesRange = this.delayMsRange * 1e-3 * sampleRate;
       for (let i = 0; i < this.channels; i++) {
         const rangeLow = delaySamplesRange * i / this.channels;
         const rangeHigh = delaySamplesRange * (i + 1) / this.channels;
@@ -180,11 +180,11 @@ var DiffuserHalfLengths = class {
       if (this.diffusionSteps[i]) this.diffusionSteps[i].reset();
     }
   }
-  initializeDelayLines(sampleRate2) {
+  initializeDelayLines(sampleRate) {
     let delayMS = this.diffusion;
     for (let i = 0; i < this.stepCount; i++) {
       if (!this.diffusionSteps[i]) this.diffusionSteps[i] = new DiffusionStep(this.channels);
-      this.diffusionSteps[i].initializeDelayLines(sampleRate2, delayMS);
+      this.diffusionSteps[i].initializeDelayLines(sampleRate, delayMS);
       delayMS /= 2;
     }
   }
@@ -255,12 +255,12 @@ var ReverbPlusPlugin = class _ReverbPlusPlugin extends EffectPlugin {
     this.delayLinesInitialized = false;
     this.prevSampleRate = 0;
     //@ts-ignore
-    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick) => {
+    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick, samplesPerSecond) => {
       if (!this.feedback) this.feedback = new MultichannelMixedFeedback(this.channels, this.roomSizeMs, Math.pow(10, -3 * (this.roomSizeMs / 1e3) / this.rt60));
       if (!this.diffuser) this.diffuser = new DiffuserHalfLengths(this.channels, this.diffusionSteps, this.diffusion);
-      if (this.prevSampleRate != sampleRate) {
+      if (this.prevSampleRate != samplesPerSecond) {
         this.delayLinesInitialized = false;
-        this.prevSampleRate = sampleRate;
+        this.prevSampleRate = samplesPerSecond;
         this.delayLineLength = 0.1 * this.roomSizeMs * this.prevSampleRate;
       }
       if (this.delayLinesInitialized) return;
@@ -268,12 +268,12 @@ var ReverbPlusPlugin = class _ReverbPlusPlugin extends EffectPlugin {
       this.diffuser.initializeDelayLines(this.prevSampleRate);
       this.delayLinesInitialized = true;
     }, "initializeDelayLines");
-    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds) => {
-      this.wet = pluginStarts[0] / _ReverbPlusPlugin.wetMax;
+    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds, samplesPerTick) => {
+      this.wet = Math.max(pluginStarts[0] / _ReverbPlusPlugin.wetMax, 1);
       this.roomSizeMs = (pluginStarts[2] + 1) * 25;
-      this.brightness = pluginStarts[1] / 10;
-      this.wetDelta = (pluginEnds[0] - pluginStarts[0]) / sampleRate;
-      this.brightDelta = (pluginEnds[1] - pluginStarts[1]) / sampleRate;
+      this.brightness = Math.max(pluginStarts[1] / 10, 1);
+      this.wetDelta = (pluginEnds[0] - pluginStarts[0]) / samplesPerTick;
+      this.brightDelta = (pluginEnds[1] - pluginStarts[1]) / samplesPerTick;
       const diffusion = pluginStarts[3] * 10;
       if (diffusion != this.diffusion) {
         this.diffusion = diffusion;

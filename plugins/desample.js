@@ -47,10 +47,10 @@ var DesamplePlugin = class extends EffectPlugin {
     }, "reset");
     this.delayLine = new Float32Array(2);
     //@ts-ignore
-    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick) => {
+    this.initializeDelayLines = /* @__PURE__ */ __name((samplesPerTick, samplesPerSecond) => {
     }, "initializeDelayLines");
     //@ts-ignore
-    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds) => {
+    this.instrumentStateFunction = /* @__PURE__ */ __name((pluginStarts, pluginEnds, samplesPerTick) => {
       const desampleRate = pluginStarts[0];
       this.desampleRate = Math.pow(2, desampleRate);
     }, "instrumentStateFunction");

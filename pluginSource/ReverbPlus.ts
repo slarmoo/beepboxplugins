@@ -1,4 +1,4 @@
-import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
+import { BeepBoxEffectPlugin, PluginElementType, type PluginElement } from "beepboxplugin";
 
 const epsilon: number = (1.0e-20); // For detecting and avoiding float denormals, which have poor performance.
 
@@ -188,7 +188,7 @@ class DiffuserHalfLengths {
 
 const pluginName = "reverb+"
 
-export default class ReverbPlusPlugin extends EffectPlugin {
+export default class ReverbPlusPlugin extends BeepBoxEffectPlugin {
     public pluginName: string = pluginName;
     public about: string = "A better implementation of reverb based on the ADC talk found here: https://youtu.be/6ZK2Goiyotk?si=HpSDjgY5dtoMC-y6";
 
@@ -207,7 +207,7 @@ export default class ReverbPlusPlugin extends EffectPlugin {
 
     public elements: PluginElement[] = [
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: ReverbPlusPlugin.wetMax,
             max: ReverbPlusPlugin.wetMax,
             name: "Reverb+",
@@ -215,7 +215,7 @@ export default class ReverbPlusPlugin extends EffectPlugin {
             hasEnvelope: true,
         },
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: 2,
             max: 10,
             name: "Brightness",
@@ -223,7 +223,7 @@ export default class ReverbPlusPlugin extends EffectPlugin {
             hasEnvelope: true,
         },
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: 5,
             max: 8,
             name: "Room Size",
@@ -231,7 +231,7 @@ export default class ReverbPlusPlugin extends EffectPlugin {
             hasEnvelope: false,
         },
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: 5,
             max: 10,
             name: "Diffusion",
@@ -261,9 +261,9 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         this.delayLinesInitialized = true;
     };
     public instrumentStateFunction = (pluginStarts: number[], pluginEnds: number[], samplesPerTick: number) => {
-        this.wet = Math.max(pluginStarts[0] / ReverbPlusPlugin.wetMax, 1);
+        this.wet = Math.min(pluginStarts[0] / ReverbPlusPlugin.wetMax, 1);
         this.roomSizeMs = (pluginStarts[2] + 1) * 25;
-        this.brightness = Math.max(pluginStarts[1] / 10, 1);
+        this.brightness = Math.min(pluginStarts[1] / 10, 1);
         this.wetDelta = (pluginEnds[0] - pluginStarts[0]) / samplesPerTick;
         this.brightDelta = (pluginEnds[1] - pluginStarts[1]) / samplesPerTick;
         const diffusion: number = pluginStarts[3] * 10;
@@ -311,6 +311,3 @@ export default class ReverbPlusPlugin extends EffectPlugin {
         return samples;
     };
 }
-
-//required
-(globalThis as any)[pluginName] = ReverbPlusPlugin; 

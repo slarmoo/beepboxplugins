@@ -1,13 +1,13 @@
-import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
+import { BeepBoxEffectPlugin, type PluginElement, PluginElementType } from "beepboxplugin";
 
 const pluginName: string = "corruption";
 
-export default class CorruptionPlugin extends EffectPlugin {
+export default class CorruptionPlugin extends BeepBoxEffectPlugin {
     public readonly pluginName: string = pluginName;
     public readonly about: string = "Applies corrupting transformations to the waveform";
     public readonly elements: PluginElement[] = [
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: 3,
             max: 32,
             name: "Corruption",
@@ -15,7 +15,7 @@ export default class CorruptionPlugin extends EffectPlugin {
             hasEnvelope: true
         },
         {
-            type: ElementType.dropdown,
+            type: PluginElementType.dropdown,
             initialValue: 1,
             options: [
                 "Invert chunks",
@@ -74,6 +74,3 @@ export default class CorruptionPlugin extends EffectPlugin {
         return sample;
     };
 }
-
-//required
-(globalThis as any)[pluginName] = CorruptionPlugin; 

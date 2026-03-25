@@ -4,16 +4,24 @@
   "description": "A collection of plugin jsons for importing into supported mods",
   "main": "index.js",
   "scripts": {
-    "dev": "vite",
-    "preview": "vite preview"
+    "build": "bash ./buildAll.sh"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/slarmoo/beepboxplugins"
+  },
+  "keywords": [
+    "beepbox",
+    "plugin",
+    "web audio",
+    "slarmoosbox"
+  ],
+  "author": "slarmoo",
+  "license": "MIT",
   "devDependencies": {
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "vite": "^5.4.19"
+    "beepboxplugin": "^0.2.1"
   }
 }

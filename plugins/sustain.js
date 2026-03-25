@@ -1,35 +1,72 @@
+var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-
-// pluginSource/plugin.ts
-var EffectPlugin = class {
-  constructor() {
-    /**
-     * If your plugin uses delay lines and you would like your sound to sustain, change this value to your sustain length
-     */
-    this.delayLineLength = 0;
-  }
-  static {
-    __name(this, "EffectPlugin");
-  }
-  /**
-   * For testing
-   */
-  ping() {
-    console.log("pong!");
-  }
+var __commonJS = (cb, mod) => function __require() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+
+// node_modules/beepboxplugin/dist/index.js
+var require_dist = __commonJS({
+  "node_modules/beepboxplugin/dist/index.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.PluginElementType = exports.BeepBoxEffectPlugin = void 0;
+    var BeepBoxEffectPlugin2 = class {
+      static {
+        __name(this, "BeepBoxEffectPlugin");
+      }
+      /**
+       * If your plugin uses delay lines and you would like your sound to sustain past the note, change this value to your sustain length
+       */
+      delayLineLength = 0;
+      /**
+       * For testing
+       */
+      ping() {
+        console.log("pong!");
+      }
+    };
+    exports.BeepBoxEffectPlugin = BeepBoxEffectPlugin2;
+    var PluginElementType2;
+    (function(PluginElementType3) {
+      PluginElementType3[PluginElementType3["slider"] = 0] = "slider";
+      PluginElementType3[PluginElementType3["checkbox"] = 1] = "checkbox";
+      PluginElementType3[PluginElementType3["dropdown"] = 2] = "dropdown";
+    })(PluginElementType2 || (exports.PluginElementType = PluginElementType2 = {}));
+  }
+});
 
 // pluginSource/Sustain.ts
+var import_beepboxplugin = __toESM(require_dist());
 var pluginName = "sustain";
-var SustainPlugin = class extends EffectPlugin {
+var SustainPlugin = class extends import_beepboxplugin.BeepBoxEffectPlugin {
   constructor() {
     super(...arguments);
     this.pluginName = pluginName;
     this.about = "Holds out the sound for a bit longer by copying and offsetting the waveform";
     this.elements = [
       {
-        type: 0 /* slider */,
+        type: import_beepboxplugin.PluginElementType.slider,
         initialValue: 8,
         max: 16,
         name: "Sustain",
@@ -37,7 +74,7 @@ var SustainPlugin = class extends EffectPlugin {
         hasEnvelope: false
       },
       {
-        type: 0 /* slider */,
+        type: import_beepboxplugin.PluginElementType.slider,
         initialValue: 16,
         max: 32,
         name: "Sustain Vol",
@@ -84,7 +121,6 @@ var SustainPlugin = class extends EffectPlugin {
     __name(this, "SustainPlugin");
   }
 };
-globalThis[pluginName] = SustainPlugin;
 export {
   SustainPlugin as default
 };

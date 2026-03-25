@@ -1,13 +1,13 @@
-import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
+import { BeepBoxEffectPlugin, PluginElementType, type PluginElement } from "beepboxplugin";
 
 const pluginName: string = "desample";
 
-export default class DesamplePlugin extends EffectPlugin {
+export default class DesamplePlugin extends BeepBoxEffectPlugin {
     public pluginName: string = pluginName;
     public about: string = "A type of bitcrush where less and less points are used in the waveform";
     public elements: PluginElement[] = [
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: 2,
             max: 16,
             name: "Desample",
@@ -46,6 +46,3 @@ export default class DesamplePlugin extends EffectPlugin {
     };
     
 }
-
-//required
-(globalThis as any)[pluginName] = DesamplePlugin; 

@@ -1,13 +1,13 @@
-import { EffectPlugin, ElementType, type PluginElement } from "./plugin";
+import { BeepBoxEffectPlugin, PluginElementType, type PluginElement } from "beepboxplugin";
 
 const pluginName: string = "sustain";
 
-export default class SustainPlugin extends EffectPlugin {
+export default class SustainPlugin extends BeepBoxEffectPlugin {
     public pluginName: string = pluginName;
     public about: string = "Holds out the sound for a bit longer by copying and offsetting the waveform";
     public elements: PluginElement[] = [
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: 8,
             max: 16,
             name: "Sustain",
@@ -15,7 +15,7 @@ export default class SustainPlugin extends EffectPlugin {
             hasEnvelope: false,
         },
         {
-            type: ElementType.slider,
+            type: PluginElementType.slider,
             initialValue: 16,
             max: 32,
             name: "Sustain Vol",
@@ -59,6 +59,3 @@ export default class SustainPlugin extends EffectPlugin {
     };
     
 }
-
-//required
-(globalThis as any)[pluginName] = SustainPlugin; 

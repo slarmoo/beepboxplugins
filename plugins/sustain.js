@@ -31,6 +31,8 @@ var require_dist = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PluginElementType = exports.BeepBoxEffectPlugin = void 0;
+    var PANNING_INDEX = 5;
+    var PLUGIN_INDEX = 9;
     var BeepBoxEffectPlugin2 = class {
       static {
         __name(this, "BeepBoxEffectPlugin");
@@ -39,6 +41,45 @@ var require_dist = __commonJS({
        * If your plugin uses delay lines and you would like your sound to sustain past the note, change this value to your sustain length
        */
       delayLineLength = 0;
+      /**
+       *
+       * @param effect The default effect number (See effectOrderIndex)
+       * @returns Whether or not the effect happens before panning
+       */
+      effectIsBeforePanning(effect) {
+        if (typeof this.effectOrderIndex == "number") {
+          if (effect == PLUGIN_INDEX) {
+            return this.effectOrderIndex < PANNING_INDEX;
+          } else {
+            return effect < 5 + +this.effectIsBeforePanning(PLUGIN_INDEX);
+          }
+        } else {
+          const panningIndex = this.effectOrderIndex.indexOf(PANNING_INDEX);
+          const otherIndex = this.effectOrderIndex.indexOf(effect);
+          if (otherIndex < 0)
+            throw RangeError(`Effect #${effect} is not in effects list`);
+          return otherIndex < panningIndex;
+        }
+      }
+      /**
+       * Verifies that effectOrderIndex is valid
+       */
+      verifyEffectOrderIndex() {
+        if (typeof this.effectOrderIndex == "number") {
+          if (this.effectOrderIndex < 0 || this.effectOrderIndex > PLUGIN_INDEX)
+            throw RangeError(`Index ${this.effectOrderIndex} is not a valid index value`);
+        } else {
+          const s = new Set(this.effectOrderIndex);
+          if (s.size < this.effectOrderIndex.length)
+            throw RangeError(`Duplicate effect indices`);
+          if (s.size > this.effectOrderIndex.length)
+            throw RangeError(`Too many effect indices`);
+          this.effectOrderIndex.forEach((v, i) => {
+            if (v < 0 || v > PLUGIN_INDEX)
+              throw RangeError(`Index ${v} is not a valid index value at position ${i}`);
+          });
+        }
+      }
       /**
        * For testing
        */

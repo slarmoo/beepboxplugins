@@ -1,9 +1,7 @@
 import { BeepBoxEffectPlugin, PluginElementType, type PluginElement } from "beepboxplugin";
 
-const pluginName: string = "desample";
-
 export default class DesamplePlugin extends BeepBoxEffectPlugin {
-    public pluginName: string = pluginName;
+    public pluginName: string = "desample";
     public about: string = "A type of bitcrush where less and less points are used in the waveform";
     public elements: PluginElement[] = [
         {

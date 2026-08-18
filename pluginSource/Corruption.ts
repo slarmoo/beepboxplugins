@@ -1,9 +1,7 @@
 import { BeepBoxEffectPlugin, type PluginElement, PluginElementType } from "beepboxplugin";
 
-const pluginName: string = "corruption";
-
 export default class CorruptionPlugin extends BeepBoxEffectPlugin {
-    public readonly pluginName: string = pluginName;
+    public readonly pluginName: string = "corruption";
     public readonly about: string = "Applies corrupting transformations to the waveform";
     public readonly elements: PluginElement[] = [
         {

@@ -1,9 +1,7 @@
 import { BeepBoxEffectPlugin, PluginElementType, type PluginElement } from "beepboxplugin";
 
-const pluginName: string = "sustain";
-
 export default class SustainPlugin extends BeepBoxEffectPlugin {
-    public pluginName: string = pluginName;
+    public pluginName: string = "sustain";
     public about: string = "Holds out the sound for a bit longer by copying and offsetting the waveform";
     public elements: PluginElement[] = [
         {

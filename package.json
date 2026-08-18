@@ -22,6 +22,6 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "beepboxplugin": "^0.2.4"
+    "beepboxplugin": "^0.2.7"
   }
 }

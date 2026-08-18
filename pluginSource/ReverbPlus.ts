@@ -1,4 +1,4 @@
-import { BeepBoxEffectPlugin, PluginElementType, type PluginElement } from "beepboxplugin";
+import { BeepBoxEffectPlugin, PluginElementType, type PluginElement, type PluginPreset } from "beepboxplugin";
 
 const epsilon: number = (1.0e-20); // For detecting and avoiding float denormals, which have poor performance.
 
@@ -186,10 +186,8 @@ class DiffuserHalfLengths {
     }
 }
 
-const pluginName = "reverb+"
-
 export default class ReverbPlusPlugin extends BeepBoxEffectPlugin {
-    public pluginName: string = pluginName;
+    public pluginName: string = "reverb+";
     public about: string = "A better implementation of reverb based on the ADC talk found here: https://youtu.be/6ZK2Goiyotk?si=HpSDjgY5dtoMC-y6";
 
     private readonly channels: number = 8;
@@ -239,6 +237,13 @@ export default class ReverbPlusPlugin extends BeepBoxEffectPlugin {
             hasEnvelope: false,
         },
     ];
+    public readonly presets: PluginPreset[] = [{
+        name: "Heavenly Strings",
+        settings: { "type": "supersaw", "eqFilter": [{ "type": "low-pass", "cutoffHz": 19027.31, "linearGain": 0.7071 }, { "type": "peak", "cutoffHz": 9513.66, "linearGain": 0.25 }, { "type": "peak", "cutoffHz": 4000, "linearGain": 0.3536 }, { "type": "peak", "cutoffHz": 16000, "linearGain": 0.3536 }], "eqFilterType": false, "eqSimpleCut": 10, "eqSimplePeak": 0, "envelopeSpeed": 12, "eqSubFilters0": [{ "type": "low-pass", "cutoffHz": 19027.31, "linearGain": 0.7071 }, { "type": "peak", "cutoffHz": 9513.66, "linearGain": 0.25 }, { "type": "peak", "cutoffHz": 4000, "linearGain": 0.3536 }, { "type": "peak", "cutoffHz": 16000, "linearGain": 0.3536 }], "effects": ["transition type", "plugin"], "transition": "interrupt", "clicklessTransition": false, "panDelay": 0, "plugin": [16, 2, 5, 5], "fadeInSeconds": 0.0125, "fadeOutTicks": 6, "unison": "none", "pulseWidth": 50, "decimalOffset": 0, "dynamism": 100, "spread": 50, "shape": 0, "envelopes": [] }
+    }, {
+        name: "Dream Choir",
+        settings: { "type": "spectrum", "eqFilter": [{ "type": "low-pass", "cutoffHz": 9513.66, "linearGain": 0.1768 }, { "type": "high-pass", "cutoffHz": 176.78, "linearGain": 1 }], "eqFilterType": false, "eqSimpleCut": 10, "eqSimplePeak": 0, "envelopeSpeed": 12, "eqSubFilters0": [{ "type": "low-pass", "cutoffHz": 9513.66, "linearGain": 0.1768 }, { "type": "high-pass", "cutoffHz": 176.78, "linearGain": 1 }], "effects": ["transition type", "detune", "granular", "reverb", "plugin"], "transition": "interrupt", "clicklessTransition": false, "detuneCents": 20, "granular": 4, "grainSize": 49, "grainFreq": 10, "grainRange": 40, "panDelay": 0, "reverb": 52, "plugin": [16, 10, 8, 10], "fadeInSeconds": 0.0125, "fadeOutTicks": 6, "unison": "stationary", "spectrum": [100, 0, 0, 0, 100, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "envelopes": [] }
+    }];
     public effectOrderIndex: number | number[] = 9;
     public reset = () => {
         this.feedback?.reset();

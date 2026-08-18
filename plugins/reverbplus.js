@@ -35,8 +35,8 @@ var require_helpers = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DelayLine = void 0;
-    var epsilon2 = 1e-20;
-    var DelayLine = class {
+    var epsilon = 1e-20;
+    var DelayLine2 = class {
       static {
         __name(this, "DelayLine");
       }
@@ -83,9 +83,7 @@ var require_helpers = __commonJS({
           this.newSamples[this.index] = this.sanitize(sample);
         else
           this.samples[this.index] = this.sanitize(sample);
-        this.index++;
-        if (this.index >= this.samples.length)
-          this.index = 0;
+        this.inc();
         this._hasBeenEmptied = false;
         if (this.newSamples && this.oldLength <= 0) {
           this.samples = this.newSamples;
@@ -93,6 +91,11 @@ var require_helpers = __commonJS({
         } else {
           this.oldLength--;
         }
+      }
+      inc() {
+        this.index++;
+        if (this.index >= this.samples.length)
+          this.index = 0;
       }
       newSamples = null;
       oldLength = 0;
@@ -112,12 +115,12 @@ var require_helpers = __commonJS({
         }
       }
       sanitize(sample) {
-        if (Number.isFinite(sample) && Math.abs(sample) >= epsilon2)
+        if (Number.isFinite(sample) && Math.abs(sample) >= epsilon)
           return sample;
         return 0;
       }
     };
-    exports.DelayLine = DelayLine;
+    exports.DelayLine = DelayLine2;
   }
 });
 
@@ -235,12 +238,6 @@ var require_dist = __commonJS({
 
 // pluginSource/ReverbPlus.ts
 var import_beepboxplugin = __toESM(require_dist());
-var epsilon = 1e-20;
-function sanitize(sample) {
-  if (Number.isFinite(sample) && Math.abs(sample) >= epsilon) return sample;
-  return 0;
-}
-__name(sanitize, "sanitize");
 function houseHolder(samples) {
   let sum = 0;
   for (const val of samples) {
@@ -275,7 +272,6 @@ var MultichannelMixedFeedback = class {
     this.delayMs = delayMs;
     this.decayGain = decayGain;
     this.delaySamples = [];
-    this.delayIndices = [];
     this.delays = [];
     this.delayed = new Float32Array(this.channels);
     this.mixed = new Float32Array(this.channels);
@@ -288,35 +284,30 @@ var MultichannelMixedFeedback = class {
     const delayBase = this.delayMs * 1e-3 * sampleRate;
     for (let i = 0; i < this.channels; i++) {
       this.delaySamples[i] = Math.floor(Math.pow(2, i / this.channels) * delayBase);
-      if ((!this.delays[i] || this.delaySamples[i] > this.delays[i].length) && this.delaySamples[i] > 0) {
-        this.delays[i] = new Float32Array(this.delaySamples[i]);
-        this.delayIndices[i] = 0;
+      if (!this.delays[i]) {
+        this.delays[i] = new import_beepboxplugin.DelayLine(this.delaySamples[i]);
+      } else {
+        this.delays[i].resizeDelayLine(this.delaySamples[i]);
       }
       this.mixed[i] = 0;
     }
   }
   reset() {
     for (let i = 0; i < this.channels; i++) {
-      for (let j = 0; j < this.delaySamples[i]; j++) this.delays[i][j] = 0;
-      this.delayIndices[i] = 0;
+      this.delays[i].empty();
       this.delayed[i] = 0;
       this.mixed[i] = 0;
     }
   }
   process(input) {
     for (let i = 0; i < this.channels; i++) {
-      let delayIndex = this.delayIndices[i] + 1;
-      if (delayIndex >= this.delaySamples[i]) delayIndex -= this.delaySamples[i];
-      this.delayed[i] = this.delays[i][delayIndex];
+      this.delayed[i] = this.delays[i].read();
       this.mixed[i] += this.dark * (this.delayed[i] - this.mixed[i]);
       ;
     }
     houseHolder(this.mixed);
     for (let i = 0; i < this.channels; i++) {
-      let delayIndex = this.delayIndices[i] + 1;
-      if (delayIndex >= this.delaySamples[i]) delayIndex -= this.delaySamples[i];
-      this.delays[i][this.delayIndices[i]] = sanitize(input[i] + this.mixed[i] * this.decayGain);
-      this.delayIndices[i] = delayIndex;
+      this.delays[i].write(input[i] + this.mixed[i] * this.decayGain);
     }
     return this.delayed;
   }
@@ -325,10 +316,9 @@ var DiffusionStep = class {
   constructor(channels) {
     this.channels = channels;
     this.delaySamples = [];
-    this.delayIndices = [];
     this.delays = [];
     this.flips = [];
-    this.delayMsRange = 50;
+    this.delayMsRange = -1;
     this.delayed = new Float32Array(this.channels);
     for (let i = 0; i < this.channels; i++) {
       this.flips[i] = Math.round(Math.random()) == 1;
@@ -348,16 +338,16 @@ var DiffusionStep = class {
       }
     }
     for (let i = 0; i < this.channels; i++) {
-      if ((!this.delays[i] || this.delaySamples[i] > this.delays[i].length) && this.delaySamples[i] > 0) {
-        this.delays[i] = new Float32Array(this.delaySamples[i]);
-        this.delayIndices[i] = 0;
+      if (!this.delays[i]) {
+        this.delays[i] = new import_beepboxplugin.DelayLine(this.delaySamples[i]);
+      } else {
+        this.delays[i].resizeDelayLine(this.delaySamples[i]);
       }
     }
   }
   reset() {
     for (let i = 0; i < this.channels; i++) {
-      for (let j = 0; j < this.delaySamples[i]; j++) this.delays[i][j] = 0;
-      this.delayIndices[i] = 0;
+      this.delays[i].empty();
       this.flips[i] = Math.round(Math.random()) == 1;
       this.delayed[i] = 0;
     }
@@ -365,11 +355,8 @@ var DiffusionStep = class {
   process(input) {
     for (let i = 0; i < this.channels; i++) {
       if (!this.delays[i]) return input;
-      let delayIndex = this.delayIndices[i] + 1;
-      if (delayIndex >= this.delaySamples[i]) delayIndex -= this.delaySamples[i];
-      this.delayed[i] = this.delays[i][delayIndex] || 0;
-      this.delays[i][this.delayIndices[i]] = sanitize(input[i]);
-      this.delayIndices[i] = delayIndex;
+      this.delayed[i] = this.delays[i].read();
+      this.delays[i].write(input[i]);
     }
     hamarand(this.delayed);
     for (let i = 0; i < this.channels; i++) {
@@ -466,6 +453,9 @@ var ReverbPlusPlugin = class _ReverbPlusPlugin extends import_beepboxplugin.Beep
     }, {
       name: "Dream Choir",
       settings: { "type": "spectrum", "eqFilter": [{ "type": "low-pass", "cutoffHz": 9513.66, "linearGain": 0.1768 }, { "type": "high-pass", "cutoffHz": 176.78, "linearGain": 1 }], "eqFilterType": false, "eqSimpleCut": 10, "eqSimplePeak": 0, "envelopeSpeed": 12, "eqSubFilters0": [{ "type": "low-pass", "cutoffHz": 9513.66, "linearGain": 0.1768 }, { "type": "high-pass", "cutoffHz": 176.78, "linearGain": 1 }], "effects": ["transition type", "detune", "granular", "reverb", "plugin"], "transition": "interrupt", "clicklessTransition": false, "detuneCents": 20, "granular": 4, "grainSize": 49, "grainFreq": 10, "grainRange": 40, "panDelay": 0, "reverb": 52, "plugin": [16, 10, 8, 10], "fadeInSeconds": 0.0125, "fadeOutTicks": 6, "unison": "stationary", "spectrum": [100, 0, 0, 0, 100, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "envelopes": [] }
+    }, {
+      name: "Cavernous",
+      settings: { "type": "FM", "eqFilter": [{ "type": "high-pass", "cutoffHz": 353.55, "linearGain": 0.5 }, { "type": "low-pass", "cutoffHz": 1189.21, "linearGain": 0.5 }, { "type": "high-pass", "cutoffHz": 176.78, "linearGain": 0.0884 }], "eqFilterType": false, "eqSimpleCut": 10, "eqSimplePeak": 0, "envelopeSpeed": 12, "eqSubFilters0": [{ "type": "high-pass", "cutoffHz": 353.55, "linearGain": 0.5 }, { "type": "low-pass", "cutoffHz": 1189.21, "linearGain": 0.5 }, { "type": "high-pass", "cutoffHz": 176.78, "linearGain": 0.0884 }], "effects": ["transition type", "chord type", "granular", "chorus", "echo", "reverb", "plugin"], "transition": "interrupt", "clicklessTransition": false, "chord": "arpeggio", "fastTwoNoteArp": true, "arpeggioSpeed": 8, "granular": 10, "grainSize": 50, "grainFreq": 10, "grainRange": 40, "panDelay": 0, "chorus": 100, "echoSustain": 100, "echoDelayBeats": 2, "reverb": 100, "plugin": [16, 10, 8, 0], "fadeInSeconds": 0, "fadeOutTicks": -1, "unison": "custom", "unisonVoices": 3, "unisonSpread": 12, "unisonOffset": 0, "unisonExpression": 0.03, "unisonSign": 1, "unisonAntiPhased": false, "algorithm": "1\u2190(2\u20023\u20024)", "feedbackType": "1\u27F2", "feedbackAmplitude": 0, "operators": [{ "frequency": "1\xD7", "amplitude": 15, "waveform": "sine", "pulseWidth": 5 }, { "frequency": "1\xD7", "amplitude": 2, "waveform": "sine", "pulseWidth": 5 }, { "frequency": "1\xD7", "amplitude": 0, "waveform": "sine", "pulseWidth": 5 }, { "frequency": "1\xD7", "amplitude": 0, "waveform": "sine", "pulseWidth": 5 }], "envelopes": [{ "target": "noteVolume", "envelope": "twang", "inverse": false, "perEnvelopeSpeed": 5.5, "perEnvelopeLowerBound": 0, "perEnvelopeUpperBound": 1, "discrete": false, "isDrumset": false }, { "target": "noteVolume", "envelope": "punch", "inverse": false, "perEnvelopeSpeed": 1, "perEnvelopeLowerBound": 0, "perEnvelopeUpperBound": 1, "discrete": false, "isDrumset": false }, { "target": "grainSize", "envelope": "none", "inverse": false, "perEnvelopeSpeed": 1, "perEnvelopeLowerBound": 0, "perEnvelopeUpperBound": 2, "discrete": false, "isDrumset": false }, { "target": "echoDelay", "envelope": "none", "inverse": false, "perEnvelopeSpeed": 1, "perEnvelopeLowerBound": 0, "perEnvelopeUpperBound": 2, "discrete": false, "isDrumset": false }, { "target": "none", "envelope": "none", "inverse": false, "perEnvelopeSpeed": 1, "perEnvelopeLowerBound": 0, "perEnvelopeUpperBound": 2, "discrete": false, "isDrumset": false }] }
     }];
     this.effectOrderIndex = 9;
     this.reset = /* @__PURE__ */ __name(() => {
